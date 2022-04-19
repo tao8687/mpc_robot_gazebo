@@ -1,0 +1,107 @@
+MpcLocalPlannerROS:
+
+  odom_topic: odom
+    
+   ## Robot settings
+  robot:
+    type: "simple_car"
+    simple_car:
+      wheelbase: 0.143
+      front_wheel_driving: False
+      max_vel_x: 0.2 #最大x前向速度
+      max_vel_x_backwards: 0.2    #最大后退速度
+      max_steering_angle: 0.7  #最大转向角度
+      acc_lim_x: 0.2 # deactive bounds with zero 配置控制偏差界限
+      dec_lim_x: 0.2 # deactive bounds with zero 配置控制偏差界限
+      max_steering_rate: 0.2 # deactive bounds with zero 配置控制偏差界限
+
+  ## Footprint model for collision avoidance
+  footprint_model: # types: "point", "circular", "two_circles", "line", "polygon"
+    type: "line"
+    # radius: 0.2 # for type "circular"
+    line_start: [0.0, 0.0] # for type "line"
+    line_end: [0.2, 0.0] # for type "line"
+    # front_offset: 0.2 # for type "two_circles"
+    # front_radius: 0.2 # for type "two_circles"
+    # rear_offset: 0.2 # for type "two_circles"
+    # rear_radius: 0.2 # for type "two_circles"
+    # vertices: [[-0.031, -0.093], [-0.031, 0.093],[0.209,0.093],[0.209, -0.093]] # for type "polygon"
+    vertices: [[-0.031, -0.093], [-0.031, 0.093],[0.209,0.093],[0.209, -0.093]]
+    is_footprint_dynamic: False
+
+
+  ## Collision avoidance避碰
+  collision_avoidance:
+    min_obstacle_dist: 0.5 # Note, this parameter must be chosen w.r.t. the footprint_model 最小障碍距离
+    enable_dynamic_obstacles: False  #启用动态障碍物
+    force_inclusion_dist: 0.5     #强制包含区
+    cutoff_dist: 2.5  #分界区
+    include_costmap_obstacles: True #应否考虑到局部costmap的障碍
+    costmap_obstacles_behind_robot_dist: 1.0 # 成本地图障碍物机器人后方区域 
+    collision_check_no_poses: 5 #碰撞_检查_否_姿势
+    
+
+  ## Planning grid 
+  grid:
+    type: "fd_grid"
+    grid_size_ref: 20 #公共网格参数
+    dt_ref: 0.2   #参考轨迹的离散间隔
+    xf_fixed: [True, True, True]
+    warm_start: True #热启动
+    collocation_method: "forward_differences" #搭配法  forward_differences midpoint_differences crank_nicolson_differences
+    cost_integration_method: "left_sum"  #成本法  left_sum  trapezoidal_rule
+    variable_grid: #可变网格
+      enable: True  
+      min_dt: 0.0;
+      max_dt: 10.0;
+      grid_adaptation:
+        enable: True
+        dt_hyst_ratio: 0.1
+        min_grid_size: 2  #最小网格大小
+        max_grid_size: 50 #最大网格大小
+
+  ## Planning options规划选项
+  planning:
+    objective:
+      type: "minimum_time_via_points" # minimum_time requires grid/variable_grid/enable=True and grid/xf_fixed set properly
+    terminal_cost:
+      type: "none"
+    terminal_constraint:
+      type: "none"
+
+  ## Controller options控制器选项
+  controller:
+    outer_ocp_iterations: 1  #外部ocp_迭代次数
+    xy_goal_tolerance: 0.2  #xy_目标_公差
+    yaw_goal_tolerance: 0.1  #偏航_目标_公差
+    global_plan_overwrite_orientation: True  #全球计划覆盖方向
+    global_plan_prune_distance: 0.5  #全球计划修剪距离
+    allow_init_with_backward_motion: True  #允许带向后运动的初始运动
+    max_global_plan_lookahead_dist: 1.5 
+    force_reinit_new_goal_dist: 1.0  #强制控制新目标区
+    force_reinit_new_goal_angular: 1.57  #强制控制新目标角度
+    prefer_x_feedback: False  #偏好反馈
+    publish_ocp_results: False  #发布ocp结果
+    
+  ## Solver settings 解算器设置
+  solver:
+    type: "ipopt" #类型：“ipopt”
+    ipopt:
+      iterations: 100 #迭代次数：100次
+      max_cpu_time: -1.0  #最大cpu时间：-3.0
+      ipopt_numeric_options:  
+        tol: 1e-4
+      ipopt_string_options:
+        linear_solver: "mumps" 
+        hessian_approximation: "limited-memory" # exact/limited-memory, WARNING 'exact' does currently not work well with the carlike model “有限内存”#精确/有限内存，警告“精确”目前不适用于carlike模型
+    lsq_lm:
+      iterations: 10 #迭代次数
+      weight_init_eq: 2  #重量初始等式
+      weight_init_ineq: 2  #初始重量
+      weight_init_bounds: 2  #重量初始界限
+      weight_adapt_factor_eq: 1.5  #重量适应系数等式
+      weight_adapt_factor_ineq: 1.5  #重量适应系数
+      weight_adapt_factor_bounds: 1.5 #权重适应系数界限
+      weight_adapt_max_eq: 500  #重量_适应_最大_等式
+      weight_adapt_max_ineq: 500  #重量
+      weight_adapt_max_bounds: 500  #重量_适应_最大_界限
